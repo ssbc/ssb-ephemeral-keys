@@ -1,14 +1,13 @@
-
 const level = require('level')
 var db = level('./db')
 
 const sodium = require('sodium-native')
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
-const concat = Buffer.concat
-
 const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
 const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
+
+const concat = Buffer.concat
 
 function randomBytes (n) {
   var b = Buffer.alloc(n)
@@ -73,14 +72,14 @@ module.exports = {
   // given dbKey, use it to decrypt a given message and return the
   // result in the callback
 
-  unBoxMessage: function (dbKey, boxedMsg, callback) {
+  unBoxMessage: function (dbKey, fullMsg, callback) {
     db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeys) => {
       if (err) return callback(err)
       ephKeys.publicKey = Buffer.from(ephKeys.publicKey.data)
       ephKeys.secretKey = Buffer.from(ephKeys.secretKey.data)
-      const nonce = boxedMsg.slice(0, NONCEBYTES)
-      const pubKey = boxedMsg.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
-      const msg = boxedMsg.slice(NONCEBYTES + KEYBYTES, boxedMsg.length)
+      const nonce = fullMsg.slice(0, NONCEBYTES)
+      const pubKey = fullMsg.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
+      const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
       const sharedSecret = genericHash(concat([ pubKey, ephKeys.publicKey, genericHash(scalarMult(ephKeys.secretKey, pubKey)) ]))
       secretBoxOpen(unboxed, msg, nonce, sharedSecret)
