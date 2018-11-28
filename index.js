@@ -43,7 +43,7 @@ module.exports = {
   // the public key to be included in a request
 
   // Note: in the case of dark-crystal the dbKey will be a rootId
-  //       a recipient
+  //       and a recipient feed id.  either concatonated or json.
 
   generateAndStore: function (dbKey, callback) {
     const ephKeys = keyPair()
