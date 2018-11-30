@@ -93,13 +93,19 @@ module.exports = {
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
       var sharedSecret = genericHash(concat([ pubKey, ephKeys.publicKey, genericHash(scalarMult(ephKeys.secretKey, pubKey)) ]))
-      secretBoxOpen(unboxed, msg, nonce, sharedSecret)
+      if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
+        sharedSecret.fill(0)
+        ephKeys.secretKey.fill(0)
+        ephKeys.publicKey.fill(0)
 
-      sharedSecret.fill(0)
-      ephKeys.secretKey.fill(0)
-      ephKeys.publicKey.fill(0)
+        callback(new Error('Decryption failed'))
+      } else {
+        sharedSecret.fill(0)
+        ephKeys.secretKey.fill(0)
+        ephKeys.publicKey.fill(0)
 
-      callback(null, unboxed.toString())
+        callback(null, unboxed.toString())
+      }
     })
   },
 
