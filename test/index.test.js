@@ -19,7 +19,11 @@ describe('Ephemeral Keys', context => {
         assert.equal(message, msg, 'output is the same as input')
         eph.deleteKeyPair(dbKey, (err) => {
           assert.notOk(err, 'error from delete Keypair is null')
-          next()
+          eph.unBoxMessage('someKey', boxedMsg, (err, msg) => {
+            assert.ok(err, 'fails to unencrypt message after deleting keys')
+            assert.notOk(msg, 'returns no keys')
+            next()
+          })
         })
       })
     })
