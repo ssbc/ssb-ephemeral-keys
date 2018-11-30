@@ -39,7 +39,6 @@ function keyPair () {
 const packKey = k => k.toString('base64') + '.' + curve
 const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
 
-
 module.exports = {
 
   // this function will generate a keypair, store the secret key
