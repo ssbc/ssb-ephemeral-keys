@@ -8,6 +8,7 @@ const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
 const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
 
 const concat = Buffer.concat
+const curve = 'ed25519'
 
 function randomBytes (n) {
   var b = Buffer.alloc(n)
@@ -35,6 +36,10 @@ function keyPair () {
   return ephKeys
 }
 
+const packKey = k => k.toString('base64') + '.' + curve
+const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
+
+
 module.exports = {
 
   // this function will generate a keypair, store the secret key
@@ -45,7 +50,10 @@ module.exports = {
   //       and a recipient feed id.  either concatonated or json.
 
   generateAndStore: function (dbKey, callback) {
-    const ephKeys = keyPair()
+    const ephKeysBuffer = keyPair()
+    var ephKeys = {}
+
+    for (var k in ephKeysBuffer) ephKeys[k] = packKey(ephKeysBuffer[k])
 
     db.put(dbKey, ephKeys, {valueEncoding: 'json'}, (err) => {
       if (err) return callback(err)
@@ -57,17 +65,18 @@ module.exports = {
   // a given public key, delete the generated private key, and return
   // the message
 
-  boxMessage: function (message, pubKey) {
+  boxMessage: function (message, pubKeyBase64) {
     const messageBuffer = Buffer.from(message, 'utf-8')
+    const pubKey = unpackKey(pubKeyBase64)
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeys = keyPair()
     const nonce = randomBytes(NONCEBYTES)
     var sharedSecret = genericHash(concat([ ephKeys.publicKey, pubKey, genericHash(scalarMult(ephKeys.secretKey, pubKey)) ]))
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
-    
+
     sharedSecret.fill(0)
     ephKeys.secretKey.fill(0)
-    
+
     return concat([nonce, ephKeys.publicKey, boxed])
   },
 
@@ -76,10 +85,10 @@ module.exports = {
   // result in the callback
 
   unBoxMessage: function (dbKey, fullMsg, callback) {
-    db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeys) => {
+    db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeysBase64) => {
       if (err) return callback(err)
-      ephKeys.publicKey = Buffer.from(ephKeys.publicKey.data)
-      ephKeys.secretKey = Buffer.from(ephKeys.secretKey.data)
+      var ephKeys = {}
+      for (var k in ephKeysBase64) ephKeys[k] = unpackKey(ephKeysBase64[k])
       const nonce = fullMsg.slice(0, NONCEBYTES)
       const pubKey = fullMsg.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
