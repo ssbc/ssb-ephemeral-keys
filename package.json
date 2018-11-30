@@ -12,5 +12,8 @@
     "chloride": "^2.2.10",
     "level": "^4.0.0",
     "sodium-native": "^2.2.3"
+  },
+  "devDependencies": {
+    "tape-plus": "^1.0.0"
   }
 }
