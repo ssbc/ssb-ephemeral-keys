@@ -39,6 +39,14 @@ function keyPair () {
 const packKey = k => k.toString('base64') + '.' + curve
 const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
 
+function buildSharedSecret(ownKeys, recipientPublicKey, contextMessage) {
+  return genericHash(concat([
+    genericHash(scalarMult(ownKeys.secretKey, recipientPublicKey)),
+    ownKeys.publicKey,
+    recipientPublicKey,
+    contextMessage ]))
+}
+
 module.exports = {
 
   generateAndStore: function (dbKey, callback) {
@@ -59,7 +67,8 @@ module.exports = {
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeys = keyPair()
     const nonce = randomBytes(NONCEBYTES)
-    var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey ]))
+    var sharedSecret = buildSharedSecret(ephKeys, pubKey, contextMessage)
+    //genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey ]))
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
     sharedSecret.fill(0)
@@ -78,7 +87,8 @@ module.exports = {
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
 
-      var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey ]))
+      var sharedSecret = buildSharedSecret(ephKeys, pubKey, contextMessage)
+      //var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey ]))
       
       if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
         sharedSecret.fill(0)
