@@ -17,35 +17,27 @@ function randomBytes (n) {
 }
 
 function genericHash (msg) {
-  var hash = Buffer.alloc(sodium.crypto_generichash_BYTES_MAX)
+  var hash = sodium.sodium_malloc(sodium.crypto_generichash_BYTES_MAX)
   sodium.crypto_generichash(hash, msg)
   return hash
 }
 
 function scalarMult (sk, pk) {
-  var result = Buffer.alloc(sodium.crypto_scalarmult_BYTES)
+  var result = sodium.sodium_malloc(sodium.crypto_scalarmult_BYTES)
   sodium.crypto_scalarmult(result, sk, pk)
   return result
 }
 
 function keyPair () {
   var ephKeys = {}
-  ephKeys.publicKey = Buffer.alloc(KEYBYTES)
-  ephKeys.secretKey = Buffer.alloc(KEYBYTES)
+  ephKeys.publicKey = sodium.sodium_malloc(KEYBYTES)
+  ephKeys.secretKey = sodium.sodium_malloc(KEYBYTES)
   sodium.crypto_box_keypair(ephKeys.publicKey, ephKeys.secretKey)
   return ephKeys
 }
 
 const packKey = k => k.toString('base64') + '.' + curve
 const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
-
-function buildSharedSecret(ownKeys, recipientPublicKey, contextMessage) {
-  return genericHash(concat([
-    genericHash(scalarMult(ownKeys.secretKey, recipientPublicKey)),
-    ownKeys.publicKey,
-    recipientPublicKey,
-    contextMessage ]))
-}
 
 module.exports = {
 
@@ -62,13 +54,13 @@ module.exports = {
   },
 
   boxMessage: function (message, pubKeyBase64) {
+    const contextMessage = Buffer.from('blah', 'utf-8')
     const messageBuffer = Buffer.from(message, 'utf-8')
     const pubKey = unpackKey(pubKeyBase64)
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeys = keyPair()
     const nonce = randomBytes(NONCEBYTES)
-    var sharedSecret = buildSharedSecret(ephKeys, pubKey, contextMessage)
-    //genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey ]))
+    var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey, contextMessage ]))
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
     sharedSecret.fill(0)
@@ -80,6 +72,7 @@ module.exports = {
   unBoxMessage: function (dbKey, fullMsg, callback) {
     db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeysBase64) => {
       if (err) return callback(err)
+      const contextMessage = Buffer.from('blah', 'utf-8')
       var ephKeys = {}
       for (var k in ephKeysBase64) ephKeys[k] = unpackKey(ephKeysBase64[k])
       const nonce = fullMsg.slice(0, NONCEBYTES)
@@ -87,19 +80,18 @@ module.exports = {
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
 
-      var sharedSecret = buildSharedSecret(ephKeys, pubKey, contextMessage)
-      //var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey ]))
-      
+      var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey, contextMessage ]))
+
       if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
-        sharedSecret.fill(0)
-        ephKeys.secretKey.fill(0)
-        ephKeys.publicKey.fill(0)
+        sodium.sodium_memzero(sharedSecret)
+        sodium.sodium_memzero(ephKeys.secretKey)
+        sodium.sodium_memzero(ephKeys.publicKey)
 
         callback(new Error('Decryption failed'))
       } else {
-        sharedSecret.fill(0)
-        ephKeys.secretKey.fill(0)
-        ephKeys.publicKey.fill(0)
+        sodium.sodium_memzero(sharedSecret)
+        sodium.sodium_memzero(ephKeys.secretKey)
+        sodium.sodium_memzero(ephKeys.publicKey)
 
         callback(null, unboxed.toString())
       }
