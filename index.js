@@ -54,8 +54,9 @@ module.exports = {
     })
   },
 
-  boxMessage: function (message, pubKeyBase64) {
-    const contextMessage = Buffer.from('blah', 'utf-8')
+  boxMessage: function (message, pubKeyBase64, contextMessageString) {
+    // TODO: handle empty contextMessage
+    const contextMessage = Buffer.from(contextMessageString, 'utf-8')
     const messageBuffer = Buffer.from(message, 'utf-8')
     const pubKey = unpackKey(pubKeyBase64)
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
@@ -73,10 +74,10 @@ module.exports = {
     return concat([nonce, ephKeys.publicKey, boxed])
   },
 
-  unBoxMessage: function (dbKey, fullMsg, callback) {
+  unBoxMessage: function (dbKey, fullMsg, contextMessageString, callback) {
     db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeysBase64) => {
       if (err) return callback(err)
-      const contextMessage = Buffer.from('blah', 'utf-8')
+      const contextMessage = Buffer.from(contextMessageString, 'utf-8')
       var ephKeys = {}
       for (var k in ephKeysBase64) ephKeys[k] = unpackKey(ephKeysBase64[k])
       const nonce = fullMsg.slice(0, NONCEBYTES)
