@@ -41,13 +41,6 @@ const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
 
 module.exports = {
 
-  // this function will generate a keypair, store the secret key
-  // to disk, indexed by the given database key and return
-  // the public key to be included in a request
-
-  // Note: in the case of dark-crystal the dbKey will be a rootId
-  //       and a recipient feed id.  either concatonated or json.
-
   generateAndStore: function (dbKey, callback) {
     const ephKeysBuffer = keyPair()
     var ephKeys = {}
@@ -59,10 +52,6 @@ module.exports = {
       callback(null, ephKeys.publicKey)
     })
   },
-
-  // this function will generate a keypair, encrypt a given shard to
-  // a given public key, delete the generated private key, and return
-  // the message
 
   boxMessage: function (message, pubKeyBase64) {
     const messageBuffer = Buffer.from(message, 'utf-8')
@@ -78,10 +67,6 @@ module.exports = {
 
     return concat([nonce, ephKeys.publicKey, boxed])
   },
-
-  // this function will grab a stored secret key from disk, using the
-  // given dbKey, use it to decrypt a given message and return the
-  // result in the callback
 
   unBoxMessage: function (dbKey, fullMsg, callback) {
     db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeysBase64) => {
@@ -110,8 +95,6 @@ module.exports = {
       }
     })
   },
-
-  // this function will delete a keyPair identified by dbKey
 
   deleteKeyPair: function (dbKey, callback) {
     db.del(dbKey, (err) => {
