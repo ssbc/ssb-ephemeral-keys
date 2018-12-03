@@ -70,7 +70,7 @@ module.exports = {
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeys = keyPair()
     const nonce = randomBytes(NONCEBYTES)
-    var sharedSecret = genericHash(concat([ ephKeys.publicKey, pubKey, genericHash(scalarMult(ephKeys.secretKey, pubKey)) ]))
+    var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey ]))
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
     sharedSecret.fill(0)
@@ -92,7 +92,9 @@ module.exports = {
       const pubKey = fullMsg.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
-      var sharedSecret = genericHash(concat([ pubKey, ephKeys.publicKey, genericHash(scalarMult(ephKeys.secretKey, pubKey)) ]))
+
+      var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey ]))
+      
       if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
         sharedSecret.fill(0)
         ephKeys.secretKey.fill(0)
