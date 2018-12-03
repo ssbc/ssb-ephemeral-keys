@@ -7,6 +7,7 @@ const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
 const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
 const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
+const zero = sodium.sodium_memzero
 
 const concat = Buffer.concat
 const curve = 'ed25519'
@@ -64,12 +65,14 @@ module.exports = {
     const nonce = randomBytes(NONCEBYTES)
 
     var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
-    hmac(sharedSecret, concat([ ephKeys.publicKey, pubKey, contextMessage ]), genericHash(scalarMult(ephKeys.secretKey, pubKey)))
+    hmac(sharedSecret,
+      concat([ ephKeys.publicKey, pubKey, contextMessage ]),
+      genericHash(scalarMult(ephKeys.secretKey, pubKey)))
 
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
-    sodium.sodium_memzero(sharedSecret)
-    sodium.sodium_memzero(ephKeys.secretKey)
+    zero(sharedSecret)
+    zero(ephKeys.secretKey)
 
     return concat([nonce, ephKeys.publicKey, boxed])
   },
@@ -86,18 +89,20 @@ module.exports = {
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
 
       var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
-      hmac(sharedSecret, concat([ pubKey, ephKeys.publicKey, contextMessage ]), genericHash(scalarMult(ephKeys.secretKey, pubKey)))
+      hmac(sharedSecret,
+        concat([ pubKey, ephKeys.publicKey, contextMessage ]),
+        genericHash(scalarMult(ephKeys.secretKey, pubKey)))
 
       if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
-        sodium.sodium_memzero(sharedSecret)
-        sodium.sodium_memzero(ephKeys.secretKey)
-        sodium.sodium_memzero(ephKeys.publicKey)
+        zero(sharedSecret)
+        zero(ephKeys.secretKey)
+        zero(ephKeys.publicKey)
 
         callback(new Error('Decryption failed'))
       } else {
-        sodium.sodium_memzero(sharedSecret)
-        sodium.sodium_memzero(ephKeys.secretKey)
-        sodium.sodium_memzero(ephKeys.publicKey)
+        zero(sharedSecret)
+        zero(ephKeys.secretKey)
+        zero(ephKeys.publicKey)
 
         callback(null, unboxed.toString())
       }
