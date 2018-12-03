@@ -2,6 +2,7 @@ const level = require('level')
 var db = level('./db')
 
 const sodium = require('sodium-native')
+const hmac = require('hmac-blake2b')
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
 const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
@@ -60,11 +61,14 @@ module.exports = {
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeys = keyPair()
     const nonce = randomBytes(NONCEBYTES)
-    var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), ephKeys.publicKey, pubKey, contextMessage ]))
+
+    var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
+    hmac(sharedSecret, concat([ ephKeys.publicKey, pubKey, contextMessage ]), genericHash(scalarMult(ephKeys.secretKey, pubKey)))
+
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
-    sharedSecret.fill(0)
-    ephKeys.secretKey.fill(0)
+    sodium.sodium_memzero(sharedSecret)
+    sodium.sodium_memzero(ephKeys.secretKey)
 
     return concat([nonce, ephKeys.publicKey, boxed])
   },
@@ -80,7 +84,8 @@ module.exports = {
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
       var unboxed = Buffer.alloc(msg.length - sodium.crypto_secretbox_MACBYTES)
 
-      var sharedSecret = genericHash(concat([ genericHash(scalarMult(ephKeys.secretKey, pubKey)), pubKey, ephKeys.publicKey, contextMessage ]))
+      var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
+      hmac(sharedSecret, concat([ pubKey, ephKeys.publicKey, contextMessage ]), genericHash(scalarMult(ephKeys.secretKey, pubKey)))
 
       if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
         sodium.sodium_memzero(sharedSecret)
