@@ -39,7 +39,13 @@ function keyPair () {
 }
 
 const packKey = k => k.toString('base64') + '.' + curve
-const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
+
+function unpackKey (k) {
+  if (k.split('.').slice(-1)[0] !== curve) {
+    throw new Error('Encountered key with unsupported curve')
+  }
+  return Buffer.from(k.slice(0, -curve.length - 1), 'base64')
+}
 
 module.exports = {
 
@@ -82,7 +88,11 @@ module.exports = {
       if (err) return callback(err)
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
       var ephKeypair = {}
-      for (var k in ephKeypairBase64) ephKeypair[k] = unpackKey(ephKeypairBase64[k])
+      try {
+        for (var k in ephKeypairBase64) ephKeypair[k] = unpackKey(ephKeypairBase64[k])
+      } catch(err) {
+        return callback(err)
+      }
       const nonce = cipherText.slice(0, NONCEBYTES)
       const pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
       const box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
