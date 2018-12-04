@@ -9,6 +9,7 @@
   "author": "ssbc",
   "license": "ISC",
   "dependencies": {
+    "hmac-blake2b": "^0.2.0",
     "level": "^4.0.0",
     "sodium-native": "^2.2.3"
   },
