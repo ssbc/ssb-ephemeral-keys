@@ -31,11 +31,11 @@ function scalarMult (sk, pk) {
 }
 
 function keyPair () {
-  var ephKeys = {}
-  ephKeys.publicKey = sodium.sodium_malloc(KEYBYTES)
-  ephKeys.secretKey = sodium.sodium_malloc(KEYBYTES)
-  sodium.crypto_box_keypair(ephKeys.publicKey, ephKeys.secretKey)
-  return ephKeys
+  var ephKeypair = {}
+  ephKeypair.publicKey = sodium.sodium_malloc(KEYBYTES)
+  ephKeypair.secretKey = sodium.sodium_malloc(KEYBYTES)
+  sodium.crypto_box_keypair(ephKeypair.publicKey, ephKeypair.secretKey)
+  return ephKeypair
 }
 
 const packKey = k => k.toString('base64') + '.' + curve
@@ -44,14 +44,14 @@ const unpackKey = k => Buffer.from(k.slice(0, -curve.length - 1), 'base64')
 module.exports = {
 
   generateAndStore: function (dbKey, callback) {
-    const ephKeysBuffer = keyPair()
-    var ephKeys = {}
+    const ephKeypairBuffer = keyPair()
+    var ephKeypair = {}
 
-    for (var k in ephKeysBuffer) ephKeys[k] = packKey(ephKeysBuffer[k])
+    for (var k in ephKeypairBuffer) ephKeypair[k] = packKey(ephKeypairBuffer[k])
 
-    db.put(dbKey, ephKeys, {valueEncoding: 'json'}, (err) => {
+    db.put(dbKey, ephKeypair, {valueEncoding: 'json'}, (err) => {
       if (err) return callback(err)
-      callback(null, ephKeys.publicKey)
+      callback(null, ephKeypair.publicKey)
     })
   },
 
@@ -61,28 +61,28 @@ module.exports = {
     const messageBuffer = Buffer.from(message, 'utf-8')
     const pubKey = unpackKey(pubKeyBase64)
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
-    const ephKeys = keyPair()
+    const ephKeypair = keyPair()
     const nonce = randomBytes(NONCEBYTES)
 
     var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
     hmac(sharedSecret,
-      concat([ ephKeys.publicKey, pubKey, contextMessage ]),
-      genericHash(scalarMult(ephKeys.secretKey, pubKey)))
+      concat([ ephKeypair.publicKey, pubKey, contextMessage ]),
+      genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
 
     secretBox(boxed, messageBuffer, nonce, sharedSecret)
 
     zero(sharedSecret)
-    zero(ephKeys.secretKey)
+    zero(ephKeypair.secretKey)
 
-    return concat([nonce, ephKeys.publicKey, boxed])
+    return concat([nonce, ephKeypair.publicKey, boxed])
   },
 
   unBoxMessage: function (dbKey, fullMsg, contextMessageString, callback) {
-    db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeysBase64) => {
+    db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeypairBase64) => {
       if (err) return callback(err)
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
-      var ephKeys = {}
-      for (var k in ephKeysBase64) ephKeys[k] = unpackKey(ephKeysBase64[k])
+      var ephKeypair = {}
+      for (var k in ephKeypairBase64) ephKeypair[k] = unpackKey(ephKeypairBase64[k])
       const nonce = fullMsg.slice(0, NONCEBYTES)
       const pubKey = fullMsg.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
       const msg = fullMsg.slice(NONCEBYTES + KEYBYTES, fullMsg.length)
@@ -90,13 +90,13 @@ module.exports = {
 
       var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
       hmac(sharedSecret,
-        concat([ pubKey, ephKeys.publicKey, contextMessage ]),
-        genericHash(scalarMult(ephKeys.secretKey, pubKey)))
+        concat([ pubKey, ephKeypair.publicKey, contextMessage ]),
+        genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
 
       const success = secretBoxOpen(unboxed, msg, nonce, sharedSecret)
       zero(sharedSecret)
-      zero(ephKeys.secretKey)
-      zero(ephKeys.publicKey)
+      zero(ephKeypair.secretKey)
+      zero(ephKeypair.publicKey)
 
       if (!success) {
         callback(new Error('Decryption failed'))
