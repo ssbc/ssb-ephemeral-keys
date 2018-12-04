@@ -93,17 +93,14 @@ module.exports = {
         concat([ pubKey, ephKeys.publicKey, contextMessage ]),
         genericHash(scalarMult(ephKeys.secretKey, pubKey)))
 
-      if (!secretBoxOpen(unboxed, msg, nonce, sharedSecret)) {
-        zero(sharedSecret)
-        zero(ephKeys.secretKey)
-        zero(ephKeys.publicKey)
+      const success = secretBoxOpen(unboxed, msg, nonce, sharedSecret)
+      zero(sharedSecret)
+      zero(ephKeys.secretKey)
+      zero(ephKeys.publicKey)
 
+      if (!success) {
         callback(new Error('Decryption failed'))
       } else {
-        zero(sharedSecret)
-        zero(ephKeys.secretKey)
-        zero(ephKeys.publicKey)
-
         callback(null, unboxed.toString())
       }
     })
