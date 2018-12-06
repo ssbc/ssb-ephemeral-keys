@@ -1,7 +1,40 @@
 
 Methods for sending messages using ephemeral keys over Secure Scuttlebutt
 
-**Warning:** This module is experimental and is **not yet recommended** for use
+**Warning:** This module is experimental and is **not yet recommended** for use.
+
+## Why? 
+
+Scuttlebutt messages cannot be deleted.  But sometimes we might want to send information to someone which we don't want to leave in the logs indefinitely.
+
+This module provides a way to do this by creating keypairs which are used just once for a specific message and can then be deleted. 
+
+## Example
+
+```js
+const eph = require('ephemeral-keys')
+
+// alice does this:
+const contextMessage = 'alice and bob'
+const dbKey = 'message for bob'
+eph.generateAndStore(dbKey, (err, pk) => {
+  // she sends the public key, pk, in a request to bob
+
+  // bob does this using the public key from alice:
+  const message = 'its nice to be important but its more important to be nice'
+  const boxedMsg = eph.boxMessage(message, pk, contextMessage)
+  // he sends the encrypted message, boxedMsg, to alice
+
+  // alice decrypts the message like this:
+  eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+    // after reading the message, msg, she deletes the keypair and it is gone forever...    
+    eph.deleteKeyPair(dbKey, (err) => {
+    })
+  })
+})
+```
+
+The `contextMessage` is optional.  If given, both alice and bob must use the same context message.
 
 ## API
 
