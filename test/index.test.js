@@ -4,7 +4,6 @@ const eph = require('..')
 
 const contextMessage = 'test'
 
-
 describe('Ephemeral Keys', context => {
   let message, dbKey
 
@@ -31,4 +30,30 @@ describe('Ephemeral Keys', context => {
       })
     })
   })
+
+  context('Encrypts and decrypts successfully using default context message if none is given', (assert, next) => {
+    eph.generateAndStore(dbKey, (err, pk) => {
+      assert.notOk(err, 'error from generating and storing keys is null')
+      const boxedMsg = eph.boxMessage(message, pk)
+      eph.unBoxMessage('someKey', boxedMsg, null, (err, msg) => {
+        assert.notOk(err, 'error from unbox is null')
+        assert.equal(message, msg, 'output is the same as input')
+        next()
+      })
+    })
+  })
+
+  context('Returns an error when given the wrong message to decrypt', (assert, next) => {
+    eph.generateAndStore(dbKey, (err, pk) => {
+      if (err) console.error(err)
+      var boxedMsg = eph.boxMessage(message, pk, contextMessage)
+      boxedMsg = 'something else'
+      eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+        assert.ok(err, 'throws error')
+        assert.notOk(msg, 'message is null')
+        next()
+      })
+    })
+  })
+  // context('Throws error on encountering unsupported key type')
 })
