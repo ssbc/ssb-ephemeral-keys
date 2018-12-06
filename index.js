@@ -3,12 +3,13 @@ var db = level('./db')
 
 const sodium = require('sodium-native')
 const hmac = require('hmac-blake2b')
+const { assert, isString } = require('./util')
+
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
 const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
 const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
 const zero = sodium.sodium_memzero
-
 const concat = Buffer.concat
 const curve = 'ed25519'
 
@@ -41,9 +42,7 @@ function keyPair () {
 const packKey = k => k.toString('base64') + '.' + curve
 
 function unpackKey (k) {
-  if (k.split('.').slice(-1)[0] !== curve) {
-    throw new Error('Encountered key with unsupported curve')
-  }
+  assert((k.split('.').slice(-1)[0] === curve), 'Encountered key with unsupported curve')
   return Buffer.from(k.slice(0, -curve.length - 1), 'base64')
 }
 
@@ -62,10 +61,16 @@ module.exports = {
   },
 
   boxMessage: function (message, pubKeyBase64, contextMessageString) {
-    // TODO: handle empty contextMessage
-    const contextMessage = Buffer.from(contextMessageString, 'utf-8')
+    assert(isString(message), 'Message must be a string')
     const messageBuffer = Buffer.from(message, 'utf-8')
+
+    assert(isString(pubKeyBase64), 'Public key must be a string')
     const pubKey = unpackKey(pubKeyBase64)
+
+    contextMessageString = contextMessageString || 'SSB Ephemeral Key'
+    assert(isString(contextMessageString), 'Context message must be a string')
+    const contextMessage = Buffer.from(contextMessageString, 'utf-8')
+
     var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
     const ephKeypair = keyPair()
     const nonce = randomBytes(NONCEBYTES)
@@ -80,23 +85,34 @@ module.exports = {
     zero(sharedSecret)
     zero(ephKeypair.secretKey)
 
-    return concat([nonce, ephKeypair.publicKey, boxed])
+    return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64')
   },
 
-  unBoxMessage: function (dbKey, cipherText, contextMessageString, callback) {
+  unBoxMessage: function (dbKey, cipherTextBase64, contextMessageString, callback) {
+    contextMessageString = contextMessageString || 'SSB Ephemeral Key'
+    assert(isString(contextMessageString), 'Context message must be a string')
+    const contextMessage = Buffer.from(contextMessageString, 'utf-8')
+
+    assert(isString(cipherTextBase64), 'Ciphertext must be a string')
+    try {
+      var cipherText = Buffer.from(cipherTextBase64, 'base64')
+      var nonce = cipherText.slice(0, NONCEBYTES)
+      var pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
+      var box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
+      var unboxed = Buffer.alloc(box.length - sodium.crypto_secretbox_MACBYTES)
+    } catch (err) {
+      return callback(new Error('Invalid ciphertext'))
+    }
+
     db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeypairBase64) => {
       if (err) return callback(err)
-      const contextMessage = Buffer.from(contextMessageString, 'utf-8')
+
       var ephKeypair = {}
       try {
         for (var k in ephKeypairBase64) ephKeypair[k] = unpackKey(ephKeypairBase64[k])
-      } catch(err) {
+      } catch (err) {
         return callback(err)
       }
-      const nonce = cipherText.slice(0, NONCEBYTES)
-      const pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
-      const box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
-      var unboxed = Buffer.alloc(box.length - sodium.crypto_secretbox_MACBYTES)
 
       var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
       hmac(sharedSecret,
