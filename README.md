@@ -5,7 +5,7 @@ Methods for sending messages using ephemeral keys over Secure Scuttlebutt
 
 ## Why? 
 
-Scuttlebutt messages cannot be deleted.  But sometimes we might want to send information to someone which we don't want to leave in the logs indefinitely.
+Scuttlebutt messages cannot be deleted.  But sometimes we might want to send information to someone which we don't want to leave in the logs indefinitely, regardless of whether it is encrypted.  This is to give 'forward security' to account for the situation that a private key might be compromised in the future.
 
 This module provides a way to do this by creating keypairs which are used just once for a specific message and can then be deleted. 
 
@@ -27,7 +27,7 @@ eph.generateAndStore(dbKey, (err, pk) => {
 
   // alice decrypts the message like this:
   eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
-    // after reading the message, msg, she deletes the keypair and it is gone forever...    
+    // after reading the message, msg, she deletes it's keypair and it is gone forever...    
     eph.deleteKeyPair(dbKey, (err) => {
     })
   })
