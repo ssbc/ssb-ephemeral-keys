@@ -8,6 +8,10 @@
   },
   "author": "ssbc",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ssbc/ephemeral-keys.git"
+  },
   "dependencies": {
     "level": "^4.0.0",
     "sodium-native": "^2.2.3"
