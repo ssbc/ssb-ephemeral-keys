@@ -11,6 +11,7 @@ const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
 const zero = sodium.sodium_memzero
 const concat = Buffer.concat
 const curve = 'ed25519'
+const defaultContextMessage = 'SSB Ephemeral key'
 
 function randomBytes (n) {
   var b = Buffer.alloc(n)
@@ -66,7 +67,7 @@ module.exports = {
     assert(isString(pubKeyBase64), 'Public key must be a string')
     const pubKey = unpackKey(pubKeyBase64)
 
-    contextMessageString = contextMessageString || 'SSB Ephemeral Key'
+    contextMessageString = contextMessageString || defaultContextMessage
     assert(isString(contextMessageString), 'Context message must be a string')
     const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
@@ -87,7 +88,7 @@ module.exports = {
   },
 
   unBoxMessage: function (dbKey, cipherTextBase64, contextMessageString, callback) {
-    contextMessageString = contextMessageString || 'SSB Ephemeral Key'
+    contextMessageString = contextMessageString || defaultContextMessage
     assert(isString(contextMessageString), 'Context message must be a string')
     const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
