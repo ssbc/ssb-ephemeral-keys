@@ -1,7 +1,7 @@
 {
-  "name": "ephemeral_keys",
+  "name": "ephemeral-keys",
   "version": "1.0.0",
-  "description": "functions for storing and using ephemeral keys",
+  "description": "Functions for storing and using ephemeral keys on Secure Scuttlebutt",
   "main": "index.js",
   "scripts": {
     "test": "tape 'test/**/*.test.js' | tap-spec"
@@ -9,7 +9,6 @@
   "author": "ssbc",
   "license": "ISC",
   "dependencies": {
-    "hmac-blake2b": "^0.2.0",
     "level": "^4.0.0",
     "sodium-native": "^2.2.3"
   },

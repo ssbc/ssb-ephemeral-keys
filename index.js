@@ -2,7 +2,6 @@ const level = require('level')
 var db = level('./db')
 
 const sodium = require('sodium-native')
-const hmac = require('hmac-blake2b')
 const { assert, isString } = require('./util')
 
 const secretBox = sodium.crypto_secretbox_easy
@@ -19,9 +18,9 @@ function randomBytes (n) {
   return b
 }
 
-function genericHash (msg) {
+function genericHash (msg, key) {
   var hash = sodium.sodium_malloc(sodium.crypto_generichash_BYTES_MAX)
-  sodium.crypto_generichash(hash, msg)
+  sodium.crypto_generichash(hash, msg, key)
   return hash
 }
 
@@ -75,8 +74,7 @@ module.exports = {
     const ephKeypair = keyPair()
     const nonce = randomBytes(NONCEBYTES)
 
-    var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
-    hmac(sharedSecret,
+    var sharedSecret = genericHash(
       concat([ ephKeypair.publicKey, pubKey, contextMessage ]),
       genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
 
@@ -114,8 +112,7 @@ module.exports = {
         return callback(err)
       }
 
-      var sharedSecret = sodium.sodium_malloc(hmac.BYTES)
-      hmac(sharedSecret,
+      var sharedSecret = genericHash(
         concat([ pubKey, ephKeypair.publicKey, contextMessage ]),
         genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
 
