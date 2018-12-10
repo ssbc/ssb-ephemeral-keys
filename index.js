@@ -10,7 +10,7 @@ const NONCEBYTES = sodium.crypto_secretbox_NONCEBYTES
 const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
 const zero = sodium.sodium_memzero
 const concat = Buffer.concat
-const curve = 'ed25519'
+const curve = 'curve25519'
 const defaultContextMessage = 'SSB Ephemeral key'
 
 function randomBytes (n) {
