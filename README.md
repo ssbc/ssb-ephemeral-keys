@@ -14,8 +14,9 @@ This module provides a way to do this by creating keypairs which are used just o
 ```js
 const eph = require('ephemeral-keys')
 
-// alice does this:
 const contextMessage = 'alice and bob' // this is included in the shared secret
+
+// alice does this:
 const dbKey = 'message from bob'
 
 eph.generateAndStore(dbKey, (err, pk) => {
