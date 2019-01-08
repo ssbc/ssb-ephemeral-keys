@@ -9,14 +9,15 @@ Scuttlebutt messages cannot be deleted.  But sometimes we might want to send inf
 
 This module provides a way to do this by creating keypairs which are used just once for a specific message and can then be deleted. 
 
-## Example
+## Example - bob sends a message to alice
 
 ```js
 const eph = require('ephemeral-keys')
 
 // alice does this:
-const contextMessage = 'alice and bob'
-const dbKey = 'message for bob'
+const contextMessage = 'alice and bob' // this is included in the shared secret
+const dbKey = 'message from bob'
+
 eph.generateAndStore(dbKey, (err, pk) => {
   // she sends the public key, pk, in a request to bob
 
@@ -26,7 +27,8 @@ eph.generateAndStore(dbKey, (err, pk) => {
   // he sends the encrypted message, boxedMsg, to alice
 
   // alice decrypts the message like this:
-  eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+  eph.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+
     // after reading the message, msg, she deletes it's keypair and it is gone forever...    
     eph.deleteKeyPair(dbKey, (err) => {
     })
