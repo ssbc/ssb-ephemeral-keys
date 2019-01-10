@@ -1,27 +1,32 @@
 const { describe } = require('tape-plus')
-
-const eph = require('..')
-
-const contextMessage = 'test'
+const Server = function TestBot (opts) {
+  return require('scuttle-testbot').use(require('..')).call(opts)
+}
 
 describe('Ephemeral Keys', context => {
-  let message, dbKey
+  let server, message, dbKey, contextMessage
 
   context.beforeEach(c => {
+    server = Server()
     message = 'its nice to be important but its more important to be nice'
     dbKey = 'someKey'
+    contextMessage = 'test'
+  })
+
+  context.afterEach(c => {
+    server.close()
   })
 
   context('Encrypts and decrypts successfully', (assert, next) => {
-    eph.generateAndStore(dbKey, (err, pk) => {
+    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       assert.notOk(err, 'error from generating and storing keys is null')
-      const boxedMsg = eph.boxMessage(message, pk, contextMessage)
-      eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+      const boxedMsg = server.ephemeral.boxMessage(message, pk, contextMessage)
+      server.ephemeral.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
         assert.notOk(err, 'error from unbox is null')
         assert.equal(message, msg, 'output is the same as input')
-        eph.deleteKeyPair(dbKey, (err) => {
+        server.ephemeral.deleteKeyPair(dbKey, (err) => {
           assert.notOk(err, 'error from delete Keypair is null')
-          eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+          server.ephemeral.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
             assert.ok(err, 'fails to unencrypt message after deleting keys')
             assert.notOk(msg, 'returns no keys')
             next()
@@ -32,10 +37,10 @@ describe('Ephemeral Keys', context => {
   })
 
   context('Encrypts and decrypts successfully using default context message if none is given', (assert, next) => {
-    eph.generateAndStore(dbKey, (err, pk) => {
+    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       assert.notOk(err, 'error from generating and storing keys is null')
-      const boxedMsg = eph.boxMessage(message, pk)
-      eph.unBoxMessage('someKey', boxedMsg, null, (err, msg) => {
+      const boxedMsg = server.ephemeral.boxMessage(message, pk)
+      server.ephemeral.unBoxMessage('someKey', boxedMsg, null, (err, msg) => {
         assert.notOk(err, 'error from unbox is null')
         assert.equal(message, msg, 'output is the same as input')
         next()
@@ -44,11 +49,11 @@ describe('Ephemeral Keys', context => {
   })
 
   context('Returns an error when given the wrong message to decrypt', (assert, next) => {
-    eph.generateAndStore(dbKey, (err, pk) => {
+    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       if (err) console.error(err)
-      var boxedMsg = eph.boxMessage(message, pk, contextMessage)
+      var boxedMsg = server.ephemeral.boxMessage(message, pk, contextMessage)
       boxedMsg = 'something else'
-      eph.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
+      server.ephemeral.unBoxMessage('someKey', boxedMsg, contextMessage, (err, msg) => {
         assert.ok(err, 'throws error')
         assert.notOk(msg, 'message is null')
         next()
