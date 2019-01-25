@@ -52,7 +52,20 @@ describe('Ephemeral Keys', context => {
     server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       if (err) console.error(err)
       var boxedMsg = server.ephemeral.boxMessage(message, pk, contextMessage)
-      boxedMsg = 'something else'
+      boxedMsg = 'something else.box'
+      server.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+        assert.ok(err, 'throws error')
+        assert.notOk(msg, 'message is null')
+        next()
+      })
+    })
+  })
+
+  context('Returns an error when ciphertext has incorrect suffix', (assert, next) => {
+    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
+      if (err) console.error(err)
+      var boxedMsg = server.ephemeral.boxMessage(message, pk, contextMessage)
+      boxedMsg = boxedMsg + '.wrong'
       server.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
         assert.ok(err, 'throws error')
         assert.notOk(msg, 'message is null')
