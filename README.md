@@ -1,5 +1,5 @@
 
-Methods for sending messages using ephemeral keys over Secure Scuttlebutt
+Scuttlebot plugin for sending messages using ephemeral keys over Secure Scuttlebutt
 
 **Warning:** This module is experimental and is **not yet recommended** for use.
 
@@ -12,26 +12,28 @@ This module provides a way to do this by creating keypairs which are used just o
 ## Example - bob sends a message to alice
 
 ```js
-const eph = require('ephemeral-keys')
+var sbot = require('scuttlebot')
+  .use(require('ephemeral-keys'))  
+  .call(null, config)
 
 const contextMessage = 'alice and bob' // this is included in the shared secret
 
 // alice does this:
 const dbKey = 'message from bob'
 
-eph.generateAndStore(dbKey, (err, pk) => {
+sbot.ephemeral.generateAndStore(dbKey, (err, pk) => {
   // she sends the public key, pk, in a request to bob
 
   // bob does this using the public key from alice:
   const message = 'its nice to be important but its more important to be nice'
-  const boxedMsg = eph.boxMessage(message, pk, contextMessage)
+  const boxedMsg = sbot.ephemeral.boxMessage(message, pk, contextMessage)
   // he sends the encrypted message, boxedMsg, to alice
 
   // alice decrypts the message like this:
-  eph.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+  sbot.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
 
     // after reading the message, msg, she deletes it's keypair and it is gone forever...    
-    eph.deleteKeyPair(dbKey, (err) => {
+    sbot.ephemeral.deleteKeyPair(dbKey, (err) => {
     })
   })
 })
