@@ -12,6 +12,7 @@ const zero = sodium.sodium_memzero
 const concat = Buffer.concat
 const curve = 'curve25519'
 const defaultContextMessage = 'SSB Ephemeral key'
+const cipherTextSuffix = '.box'
 
 module.exports = {
   name: 'ephemeral',
@@ -64,7 +65,7 @@ module.exports = {
       zero(sharedSecret)
       zero(ephKeypair.secretKey)
 
-      return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64')
+      return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
@@ -73,8 +74,13 @@ module.exports = {
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
       assert(isString(cipherTextBase64), 'Ciphertext must be a string')
+
+      if (cipherTextBase64.slice(-1 * cipherTextSuffix.length) !== cipherTextSuffix) {
+        return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
+      }
+
       try {
-        var cipherText = Buffer.from(cipherTextBase64, 'base64')
+        var cipherText = Buffer.from(cipherTextBase64.slice(0, -1 * cipherTextSuffix.length), 'base64')
         var nonce = cipherText.slice(0, NONCEBYTES)
         var pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
         var box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
