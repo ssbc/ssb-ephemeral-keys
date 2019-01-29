@@ -69,6 +69,11 @@ module.exports = {
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
+      if (isFunction(contextMessageString) && !callback) {
+        callback = contextMessageString
+        contextMessageString = defaultContextMessage
+      }
+
       contextMessageString = contextMessageString || defaultContextMessage
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
@@ -163,4 +168,8 @@ const packKey = k => k.toString('base64') + '.' + curve
 function unpackKey (k) {
   assert((k.split('.').slice(-1)[0] === curve), 'Encountered key with unsupported curve')
   return Buffer.from(k.slice(0, -curve.length - 1), 'base64')
+}
+
+function isFunction (f) {
+  return typeof f === 'function'
 }
