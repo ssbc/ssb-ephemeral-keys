@@ -40,7 +40,7 @@ describe('Ephemeral Keys', context => {
     server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       assert.notOk(err, 'error from generating and storing keys is null')
       const boxedMsg = server.ephemeral.boxMessage(message, pk)
-      server.ephemeral.unBoxMessage(dbKey, boxedMsg, null, (err, msg) => {
+      server.ephemeral.unBoxMessage(dbKey, boxedMsg, (err, msg) => {
         assert.notOk(err, 'error from unbox is null')
         assert.equal(message, msg, 'output is the same as input')
         next()
