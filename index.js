@@ -2,7 +2,7 @@ const mkdirp = require('mkdirp')
 const { join } = require('path')
 const level = require('level')
 const sodium = require('sodium-native')
-const { assert, isString } = require('./util')
+const { assert, isString, isFunction } = require('./util')
 
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
@@ -12,6 +12,7 @@ const zero = sodium.sodium_memzero
 const concat = Buffer.concat
 const curve = 'curve25519'
 const defaultContextMessage = 'SSB Ephemeral key'
+const cipherTextSuffix = '.box'
 
 module.exports = {
   name: 'ephemeral',
@@ -24,9 +25,7 @@ module.exports = {
   },
   init: function (server, config) {
     mkdirp.sync(join(config.path, 'ephemeral-keys'))
-    const db = level(join(config.path, 'ephemeral-keys'), {
-      // valueEncoding: charwise // TODO: ?
-    })
+    const db = level(join(config.path, 'ephemeral-keys'))
 
     function generateAndStore (dbKey, callback) {
       const ephKeypairBuffer = keyPair()
@@ -64,17 +63,27 @@ module.exports = {
       zero(sharedSecret)
       zero(ephKeypair.secretKey)
 
-      return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64')
+      return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
+      if (isFunction(contextMessageString) && !callback) {
+        callback = contextMessageString
+        contextMessageString = defaultContextMessage
+      }
+
       contextMessageString = contextMessageString || defaultContextMessage
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
       assert(isString(cipherTextBase64), 'Ciphertext must be a string')
+
+      if (cipherTextBase64.slice(-1 * cipherTextSuffix.length) !== cipherTextSuffix) {
+        return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
+      }
+
       try {
-        var cipherText = Buffer.from(cipherTextBase64, 'base64')
+        var cipherText = Buffer.from(cipherTextBase64.slice(0, -1 * cipherTextSuffix.length), 'base64')
         var nonce = cipherText.slice(0, NONCEBYTES)
         var pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
         var box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)

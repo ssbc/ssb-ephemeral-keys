@@ -1,7 +1,7 @@
 
 Scuttlebot plugin for sending messages using ephemeral keys over Secure Scuttlebutt
 
-**Warning:** This module is experimental and is **not yet recommended** for use.
+**Warning:** This is an experimental module, use at your own risk
 
 ## Why? 
 
