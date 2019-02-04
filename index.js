@@ -2,7 +2,7 @@ const mkdirp = require('mkdirp')
 const { join } = require('path')
 const level = require('level')
 const sodium = require('sodium-native')
-const { assert, isString } = require('./util')
+const { assert, isString, isFunction } = require('./util')
 
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
@@ -25,9 +25,7 @@ module.exports = {
   },
   init: function (server, config) {
     mkdirp.sync(join(config.path, 'ephemeral-keys'))
-    const db = level(join(config.path, 'ephemeral-keys'), {
-      // valueEncoding: charwise // TODO: ?
-    })
+    const db = level(join(config.path, 'ephemeral-keys'))
 
     function generateAndStore (dbKey, callback) {
       const ephKeypairBuffer = keyPair()
@@ -168,8 +166,4 @@ const packKey = k => k.toString('base64') + '.' + curve
 function unpackKey (k) {
   assert((k.split('.').slice(-1)[0] === curve), 'Encountered key with unsupported curve')
   return Buffer.from(k.slice(0, -curve.length - 1), 'base64')
-}
-
-function isFunction (f) {
-  return typeof f === 'function'
 }
