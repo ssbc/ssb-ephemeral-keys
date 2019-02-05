@@ -1,5 +1,5 @@
 {
-  "name": "ephemeral-keys",
+  "name": "ssb-ephemeral-keys",
   "version": "1.0.0",
   "description": "Functions for storing and using ephemeral keys on Secure Scuttlebutt",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "test": "tape 'test/**/*.test.js' | tap-spec"
   },
   "author": "ssbc",
-  "license": "ISC",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/ssbc/ephemeral-keys.git"
