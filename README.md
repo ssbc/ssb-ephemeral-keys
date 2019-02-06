@@ -13,7 +13,7 @@ This module provides a way to do this by creating keypairs which are used just o
 
 ```js
 var sbot = require('scuttlebot')
-  .use(require('ephemeral-keys'))  
+  .use(require('ssb-ephemeral-keys'))  
   .call(null, config)
 
 const contextMessage = 'alice and bob' // this is included in the shared secret

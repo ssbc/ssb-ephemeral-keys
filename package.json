@@ -10,7 +10,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ssbc/ephemeral-keys.git"
+    "url": "git://github.com/ssbc/ssb-ephemeral-keys.git"
   },
   "dependencies": {
     "level": "^4.0.0",
