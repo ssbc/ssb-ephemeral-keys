@@ -2,7 +2,7 @@ const mkdirp = require('mkdirp')
 const { join } = require('path')
 const level = require('level')
 const sodium = require('sodium-native')
-const { assert, isString, isFunction } = require('./util')
+const { assert, isString, isObject, isFunction } = require('./util')
 
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
@@ -32,6 +32,9 @@ module.exports = {
       var ephKeypair = {}
 
       for (var k in ephKeypairBuffer) ephKeypair[k] = packKey(ephKeypairBuffer[k])
+
+      // TODO: level allows objects as keys but i cant get it to work, hence this
+      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
 
       db.put(dbKey, ephKeypair, {valueEncoding: 'json'}, (err) => {
         if (err) return callback(err)
@@ -97,6 +100,9 @@ module.exports = {
         return callback(new Error('Invalid ciphertext'))
       }
 
+      // TODO: level allows objects as keys but i cant get it to work, hence this
+      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
+
       db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeypairBase64) => {
         if (err) return callback(err)
 
@@ -125,6 +131,9 @@ module.exports = {
     }
 
     function deleteKeyPair (dbKey, callback) {
+      // TODO: level allows objects as keys but i cant get it to work, hence this
+      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
+
       db.del(dbKey, (err) => {
         if (err) return callback(err)
         callback()
