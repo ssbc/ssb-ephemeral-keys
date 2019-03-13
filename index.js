@@ -19,7 +19,7 @@ module.exports = {
   version: require('./package.json').version,
   manifest: {
     generateAndStore: 'async',
-    boxMessage: 'sync',
+    boxMessage: 'async',
     unBoxMessage: 'async',
     deleteKeypair: 'async'
   },
@@ -39,12 +39,15 @@ module.exports = {
       })
     }
 
-    function boxMessage (message, pubKeyBase64, contextMessageString) {
+    function boxMessage (message, pubKeyBase64, contextMessageString, callback) {
       assert(isString(message), 'Message must be a string')
       const messageBuffer = Buffer.from(message, 'utf-8')
-
       assert(isString(pubKeyBase64), 'Public key must be a string')
       const pubKey = unpackKey(pubKeyBase64)
+      if (isFunction(contextMessageString) && !callback) {
+        callback = contextMessageString
+        contextMessageString = defaultContextMessage
+      }
 
       contextMessageString = contextMessageString || defaultContextMessage
       assert(isString(contextMessageString), 'Context message must be a string')
@@ -63,7 +66,9 @@ module.exports = {
       zero(sharedSecret)
       zero(ephKeypair.secretKey)
 
-      return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
+      callback(null,
+        concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
+      )
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
