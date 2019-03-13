@@ -26,14 +26,16 @@ sbot.ephemeral.generateAndStore(dbKey, (err, pk) => {
 
   // bob does this using the public key from alice:
   const message = 'its nice to be important but its more important to be nice'
-  const boxedMsg = sbot.ephemeral.boxMessage(message, pk, contextMessage)
-  // he sends the encrypted message, boxedMsg, to alice
+  sbot.ephemeral.boxMessage(message, pk, contextMessage, (err, boxedMsg) => {
 
-  // alice decrypts the message like this:
-  sbot.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+    // he sends the encrypted message, boxedMsg, to alice
 
-    // after reading the message, msg, she deletes it's keypair and it is gone forever...    
-    sbot.ephemeral.deleteKeyPair(dbKey, (err) => {
+    // alice decrypts the message like this:
+    sbot.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+
+      // after reading the message, msg, she deletes it's keypair and it is gone forever...    
+      sbot.ephemeral.deleteKeyPair(dbKey, (err) => {
+      })
     })
   })
 })
