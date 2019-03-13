@@ -53,6 +53,7 @@ module.exports = {
       }
 
       contextMessageString = contextMessageString || defaultContextMessage
+      if (isObject(contextMessageString)) JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
@@ -81,6 +82,7 @@ module.exports = {
       }
 
       contextMessageString = contextMessageString || defaultContextMessage
+      if (isObject(contextMessageString)) JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
