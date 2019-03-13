@@ -49,11 +49,11 @@ This function will generate a keypair, store the secret key
 to disk, indexed by the given database key and return
 the public key to be included in a request in the callback.
 
-### `boxMessage(message, recipientPublicKey, contextMessage)` (sync)
+### `boxMessage(message, recipientPublicKey, contextMessage, cb)` (async)
 
 This function will generate a keypair, encrypt a given shard to
 a given ephemeral public key, delete the generated private key, 
-and return the encrypted message encoded as a base64 string.
+and return the encrypted message encoded as a base64 string in the callback.
  
 The context message is a string which, if given, is added to the shared
 secret so that it may only be used for a specific purpose.
