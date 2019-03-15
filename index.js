@@ -53,7 +53,7 @@ module.exports = {
       }
 
       contextMessageString = contextMessageString || defaultContextMessage
-      if (isObject(contextMessageString)) JSON.stringify(contextMessageString)
+      if (isObject(contextMessageString)) contextMessageString = JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
@@ -69,7 +69,6 @@ module.exports = {
 
       zero(sharedSecret)
       zero(ephKeypair.secretKey)
-
       callback(null,
         concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
       )
@@ -82,7 +81,7 @@ module.exports = {
       }
 
       contextMessageString = contextMessageString || defaultContextMessage
-      if (isObject(contextMessageString)) JSON.stringify(contextMessageString)
+      if (isObject(contextMessageString)) contextMessageString = JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
