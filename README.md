@@ -43,6 +43,73 @@ sbot.ephemeral.generateAndStore(dbKey, (err, pk) => {
 
 The `contextMessage` is optional.  If given, both alice and bob must use the same context message.
 
+## Security Review
+
+first an ephemeral key is generated, and stored on the local system for later, under an arbitary
+key that the user selects. (since ssb is a async system for non-realtime communication it's necessary to store the ephemeral keys)
+
+All keys are `curve25519` type.
+
+### encryption
+
+A `message` is encrypted to a `recipientEphemeralKey` with a `contextMessage`.
+The `contextMessage` serves to prevent ephemeral messages intended for one purpose
+unusable for another purpose. A 24 byte random `nonce` is generated.
+
+A `singleUseKey` is generated just for encrypting this message. A shared secret is generated,
+via
+
+```
+// interpret + as concatinate.
+sharedSecret = hash(
+  singleUseKey.public +
+  recipientEphemeralKey.public +
+  contextMessage +
+  hash(scalarmult(singleUseKey.private, recipientEphemeralKey.public)
+)
+```
+
+then that is used to encrypt the message:
+
+``` js
+cyphertext = secretbox(message, nonce, sharedSecret)
+```
+
+the `sharedSecret` and `singleUseKey` are zerod,
+and `nonce + singeUseKey.public + cyphertext` is returned.
+
+### decryption
+
+The user has to know which stored ephemeral key is to be used.
+probably the stored key should be identified with a message id,
+since they will need to post it to another peer so that they may encrypt to it.
+
+to decrypt, the user receives
+
+``` js
+  ephemeral_message = nonce + singeUseKey.public + cyphertext
+```
+that is parsed, and from their stored ephemeralKey, (the `recipientEphemeralKey` that was sent to)
+they reconstruct the shared secret,
+
+``` js
+sharedSecret = hash(
+  singleUseKey.public +
+  recipientEphemeralKey.public +
+  contextMessage +
+  hash(scalarmult(recipientEphemeralKey.private, singleUseKey.public)
+)
+```
+and then that is used to decrypt the key.
+
+### comments on security
+
+Although there is nothing wrong with the crypto operations used in this library,
+It only solves half the problem, and leaves quite a bit of the responsibility of
+implementing a secure system to the application which uses it. That is to say,
+it's would be easy for the application to screw things up. For example,
+by not deleting the key, or reusing the key too many times.
+
 ## API
 
 ### `generateAndStore(databaseKey, callback)` (async)
@@ -72,3 +139,4 @@ secret so that it may only be used for a specific purpose.
 ### `deleteKeyPair(dbKey, callback)` (async)
 
 This function will delete a keyPair identified by the given database key
+
