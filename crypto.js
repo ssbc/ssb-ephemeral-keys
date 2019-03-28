@@ -48,7 +48,15 @@ function encryptMessage (pubKey, messageBuffer, contextMessage) {
   return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64')
 }
 
-function decryptMessage (ephKeypair, pubKey, box, unboxed, contextMessage, nonce) {
+function decryptMessage (cipherText, ephKeypair, contextMessage) {
+  try {
+    var nonce = cipherText.slice(0, NONCEBYTES)
+    var pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
+    var box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
+    var unboxed = Buffer.alloc(box.length - sodium.crypto_secretbox_MACBYTES)
+  } catch (err) {
+    return false
+  }
   var sharedSecret = genericHash(
     concat([ pubKey, ephKeypair.publicKey, contextMessage ]),
     genericHash(scalarMult(ephKeypair.secretKey, pubKey)))

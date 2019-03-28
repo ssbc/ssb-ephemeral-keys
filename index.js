@@ -72,15 +72,6 @@ module.exports = {
         return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
       }
 
-      try {
-        var cipherText = Buffer.from(cipherTextBase64.slice(0, -1 * cipherTextSuffix.length), 'base64')
-        var nonce = cipherText.slice(0, NONCEBYTES)
-        var pubKey = cipherText.slice(NONCEBYTES, NONCEBYTES + KEYBYTES)
-        var box = cipherText.slice(NONCEBYTES + KEYBYTES, cipherText.length)
-        var unboxed = Buffer.alloc(box.length - sodium.crypto_secretbox_MACBYTES)
-      } catch (err) {
-        return callback(new Error('Invalid ciphertext'))
-      }
       // TODO: level allows objects as keys but i cant get it to work, hence this
       if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
 
@@ -94,7 +85,8 @@ module.exports = {
           return callback(err)
         }
 
-        const plainText = decryptMessage(ephKeypair, pubKey, box, unboxed, contextMessage, nonce)
+        var cipherText = Buffer.from(cipherTextBase64.slice(0, -1 * cipherTextSuffix.length), 'base64')
+        const plainText = decryptMessage(cipherText, ephKeypair, contextMessage)
         if (!plainText) {
           callback(new Error('Decryption failed'))
         } else {
