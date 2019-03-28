@@ -11,7 +11,6 @@ const KEYBYTES = sodium.crypto_secretbox_KEYBYTES
 const zero = sodium.sodium_memzero
 const concat = Buffer.concat
 const curve = 'curve25519'
-const defaultContextMessage = 'SSB Ephemeral key'
 const cipherTextSuffix = '.box'
 
 module.exports = {
@@ -47,12 +46,7 @@ module.exports = {
       const messageBuffer = Buffer.from(message, 'utf-8')
       assert(isString(pubKeyBase64), 'Public key must be a string')
       const pubKey = unpackKey(pubKeyBase64)
-      if (isFunction(contextMessageString) && !callback) {
-        callback = contextMessageString
-        contextMessageString = defaultContextMessage
-      }
 
-      contextMessageString = contextMessageString || defaultContextMessage
       if (isObject(contextMessageString)) contextMessageString = JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
@@ -75,12 +69,6 @@ module.exports = {
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
-      if (isFunction(contextMessageString) && !callback) {
-        callback = contextMessageString
-        contextMessageString = defaultContextMessage
-      }
-
-      contextMessageString = contextMessageString || defaultContextMessage
       if (isObject(contextMessageString)) contextMessageString = JSON.stringify(contextMessageString)
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
