@@ -57,21 +57,7 @@ module.exports = {
       assert(isString(contextMessageString), 'Context message must be a string')
       const contextMessage = Buffer.from(contextMessageString, 'utf-8')
 
-      var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
-      const ephKeypair = keyPair()
-      const nonce = randomBytes(NONCEBYTES)
-
-      var sharedSecret = genericHash(
-        concat([ ephKeypair.publicKey, pubKey, contextMessage ]),
-        genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
-
-      secretBox(boxed, messageBuffer, nonce, sharedSecret)
-
-      zero(sharedSecret)
-      zero(ephKeypair.secretKey)
-      callback(null,
-        concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
-      )
+      callback(null, encryptMessage(pubKey, messageBuffer, contextMessage))
     }
 
     function unBoxMessage (dbKey, cipherTextBase64, contextMessageString, callback) {
@@ -100,7 +86,6 @@ module.exports = {
       } catch (err) {
         return callback(new Error('Invalid ciphertext'))
       }
-
       // TODO: level allows objects as keys but i cant get it to work, hence this
       if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
 
@@ -114,19 +99,11 @@ module.exports = {
           return callback(err)
         }
 
-        var sharedSecret = genericHash(
-          concat([ pubKey, ephKeypair.publicKey, contextMessage ]),
-          genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
-
-        const success = secretBoxOpen(unboxed, box, nonce, sharedSecret)
-        zero(sharedSecret)
-        zero(ephKeypair.secretKey)
-        zero(ephKeypair.publicKey)
-
-        if (!success) {
+        const plainText = decryptMessage(ephKeypair, pubKey, box, unboxed, contextMessage, nonce)
+        if (!plainText) {
           callback(new Error('Decryption failed'))
         } else {
-          callback(null, unboxed.toString())
+          callback(null, plainText)
         }
       })
     }
@@ -174,6 +151,33 @@ function keyPair () {
   ephKeypair.secretKey = sodium.sodium_malloc(KEYBYTES)
   sodium.crypto_box_keypair(ephKeypair.publicKey, ephKeypair.secretKey)
   return ephKeypair
+}
+
+function encryptMessage (pubKey, messageBuffer, contextMessage) {
+  var boxed = Buffer.alloc(messageBuffer.length + sodium.crypto_secretbox_MACBYTES)
+  const ephKeypair = keyPair()
+  const nonce = randomBytes(NONCEBYTES)
+  var sharedSecret = genericHash(
+    concat([ ephKeypair.publicKey, pubKey, contextMessage ]),
+    genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
+
+  secretBox(boxed, messageBuffer, nonce, sharedSecret)
+
+  zero(sharedSecret)
+  zero(ephKeypair.secretKey)
+  return concat([nonce, ephKeypair.publicKey, boxed]).toString('base64') + cipherTextSuffix
+}
+
+function decryptMessage (ephKeypair, pubKey, box, unboxed, contextMessage, nonce) {
+  var sharedSecret = genericHash(
+    concat([ pubKey, ephKeypair.publicKey, contextMessage ]),
+    genericHash(scalarMult(ephKeypair.secretKey, pubKey)))
+
+  const success = secretBoxOpen(unboxed, box, nonce, sharedSecret)
+  zero(sharedSecret)
+  zero(ephKeypair.secretKey)
+  zero(ephKeypair.publicKey)
+  return success ? unboxed.toString() : false
 }
 
 const packKey = k => k.toString('base64') + '.' + curve
