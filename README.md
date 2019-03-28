@@ -45,12 +45,12 @@ The `contextMessage` is optional.  If given, both alice and bob must use the sam
 
 ## Security Review
 
-first an ephemeral key is generated, and stored on the local system for later, under an arbitary
+First an ephemeral key is generated, and stored on the local system for later, under an arbitrary
 key that the user selects. (since ssb is a async system for non-realtime communication it's necessary to store the ephemeral keys)
 
 All keys are `curve25519` type.
 
-### encryption
+### Encryption
 
 A `message` is encrypted to a `recipientEphemeralKey` with a `contextMessage`.
 The `contextMessage` serves to prevent ephemeral messages intended for one purpose
@@ -75,16 +75,16 @@ then that is used to encrypt the message:
 cyphertext = secretbox(message, nonce, sharedSecret)
 ```
 
-the `sharedSecret` and `singleUseKey` are zerod,
+The `sharedSecret` and `singleUseKey` are zerod,
 and `nonce + singeUseKey.public + cyphertext` is returned.
 
-### decryption
+### Decryption
 
 The user has to know which stored ephemeral key is to be used.
-probably the stored key should be identified with a message id,
+Probably the stored key should be identified with a message id,
 since they will need to post it to another peer so that they may encrypt to it.
 
-to decrypt, the user receives
+To decrypt, the user receives
 
 ``` js
   ephemeral_message = nonce + singeUseKey.public + cyphertext
@@ -102,7 +102,7 @@ sharedSecret = hash(
 ```
 and then that is used to decrypt the key.
 
-### comments on security
+### Comments on security
 
 Although there is nothing wrong with the crypto operations used in this library,
 It only solves half the problem, and leaves quite a bit of the responsibility of
