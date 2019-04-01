@@ -1,4 +1,3 @@
-
 const sodium = require('sodium-native')
 const secretBox = sodium.crypto_secretbox_easy
 const secretBoxOpen = sodium.crypto_secretbox_open_easy
