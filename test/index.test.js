@@ -38,20 +38,6 @@ describe('Ephemeral Keys', context => {
     })
   })
 
-  context('Encrypts and decrypts successfully using default context message if none is given', (assert, next) => {
-    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
-      assert.notOk(err, 'error from generating and storing keys is null')
-      server.ephemeral.boxMessage(message, pk, (err, boxedMsg) => {
-        assert.notOk(err, 'error from boxMessage is null')
-        server.ephemeral.unBoxMessage(dbKey, boxedMsg, (err, msg) => {
-          assert.notOk(err, 'error from unbox is null')
-          assert.equal(message, msg, 'output is the same as input')
-          next()
-        })
-      })
-    })
-  })
-
   context('Returns an error when given the wrong message to decrypt', (assert, next) => {
     server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       if (err) console.error(err)
@@ -85,9 +71,9 @@ describe('Ephemeral Keys', context => {
   context('Throws an error when given an incorrect key', (assert, next) => {
     server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       assert.notOk(err, 'error from generating and storing keys is null')
-      server.ephemeral.boxMessage(message, pk, (err, boxedMsg) => {
+      server.ephemeral.boxMessage(message, pk, contextMessage, (err, boxedMsg) => {
         assert.notOk(err, 'error from boxMessage is null')
-        server.ephemeral.unBoxMessage('the wrong key', boxedMsg, null, (err, msg) => {
+        server.ephemeral.unBoxMessage('the wrong key', boxedMsg, contextMessage, (err, msg) => {
           assert.ok(err, 'throws error')
           assert.notOk(msg, 'msg is null')
           next()

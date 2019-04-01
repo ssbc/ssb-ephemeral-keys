@@ -41,7 +41,7 @@ sbot.ephemeral.generateAndStore(dbKey, (err, pk) => {
 })
 ```
 
-The `contextMessage` is optional.  If given, both alice and bob must use the same context message.
+Note that both alice and bob must use the same context message.
 
 ## Security Review
 
@@ -124,7 +124,7 @@ This function will generate a keypair, encrypt a given shard to
 a given ephemeral public key, delete the generated private key, 
 and return the encrypted message encoded as a base64 string in the callback.
  
-The context message is a string which, if given, is added to the shared
+The context message is a string which is added to the shared
 secret so that it may only be used for a specific purpose.
 
 ### `unBoxMessage(databaseKey, encryptedMessage, contextMessage, callback)` (async)
