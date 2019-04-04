@@ -3,10 +3,6 @@ module.exports = {
     function isString (variable) {
       return typeof variable === 'string'
     },
-  isFunction:
-    function isFunction (f) {
-      return typeof f === 'function'
-    },
   isObject:
     function isObject (o) {
       return typeof o === 'object'
