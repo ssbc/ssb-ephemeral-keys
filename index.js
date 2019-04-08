@@ -2,11 +2,11 @@ const mkdirp = require('mkdirp')
 const { join } = require('path')
 const fs = require('fs')
 const skrub = require('skrub')
+const { isMsg } = require('ssb-ref')
 
 const { assert, isString, isObject } = require('./util')
 const curve = 'curve25519'
 const cipherTextSuffix = '.box'
-
 const { keyPair, decryptMessage, encryptMessage } = require('./crypto')
 
 const dbPath = 'ephemeral-keys'
@@ -61,6 +61,7 @@ module.exports = {
 
       fs.readFile(buildFileName(dbKey), (err, data) => {
         if (err) return callback(err)
+        console.log(JSON.parse(data))
         const ephKeypairBase64 = JSON.parse(data)
         var ephKeypair = {}
         try {
@@ -86,8 +87,12 @@ module.exports = {
       )
     }
 
-    function buildFileName (dbKey) {
-      return join(config.path, dbPath, dbKey)
+    function buildFileName (fileName) {
+      if (isMsg(fileName)) {
+        fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
+      }
+      fileName += '.json'
+      return join(config.path, dbPath, fileName)
     }
 
     return {
@@ -96,7 +101,6 @@ module.exports = {
       unBoxMessage,
       deleteKeyPair
     }
-
   }
 }
 
