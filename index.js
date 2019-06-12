@@ -61,7 +61,6 @@ module.exports = {
 
       fs.readFile(buildFileName(dbKey), (err, data) => {
         if (err) return callback(err)
-        console.log(JSON.parse(data))
         const ephKeypairBase64 = JSON.parse(data)
         var ephKeypair = {}
         try {
