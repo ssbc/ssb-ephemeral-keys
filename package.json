@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "level": "^4.0.0",
+    "skrub": "^1.4.0",
     "sodium-native": "^2.2.3"
   },
   "devDependencies": {

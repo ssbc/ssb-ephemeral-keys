@@ -38,6 +38,28 @@ describe('Ephemeral Keys', context => {
     })
   })
 
+  context('Encrypts and decrypts successfully with message id as dbKey', (assert, next) => {
+    dbKey = '%RzgT1rYz75SyeA7Hw+X2l79WyGGv9C/XOrS6CgAaXVo=.sha256'
+    server.ephemeral.generateAndStore(dbKey, (err, pk) => {
+      assert.notOk(err, 'error from generating and storing keys is null')
+      server.ephemeral.boxMessage(message, pk, contextMessage, (err, boxedMsg) => {
+        assert.notOk(err, 'error from boxMessage is null')
+        server.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+          assert.notOk(err, 'error from unbox is null')
+          assert.equal(message, msg, 'output is the same as input')
+          server.ephemeral.deleteKeyPair(dbKey, (err) => {
+            assert.notOk(err, 'error from delete Keypair is null')
+            server.ephemeral.unBoxMessage(dbKey, boxedMsg, contextMessage, (err, msg) => {
+              assert.ok(err, 'fails to unencrypt message after deleting keys')
+              assert.notOk(msg, 'returns no keys')
+              next()
+            })
+          })
+        })
+      })
+    })
+  })
+
   context('Returns an error when given the wrong message to decrypt', (assert, next) => {
     server.ephemeral.generateAndStore(dbKey, (err, pk) => {
       if (err) console.error(err)

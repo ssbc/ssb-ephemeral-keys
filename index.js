@@ -1,12 +1,15 @@
 const mkdirp = require('mkdirp')
 const { join } = require('path')
-const level = require('level')
-const { assert, isString, isObject, isFunction } = require('./util')
+const fs = require('fs')
+const skrub = require('skrub')
+const { isMsg } = require('ssb-ref')
 
+const { assert, isString, isObject } = require('./util')
 const curve = 'curve25519'
 const cipherTextSuffix = '.box'
-
 const { keyPair, decryptMessage, encryptMessage } = require('./crypto')
+
+const dbPath = 'ephemeral-keys'
 
 module.exports = {
   name: 'ephemeral',
@@ -18,8 +21,7 @@ module.exports = {
     deleteKeypair: 'async'
   },
   init: function (server, config) {
-    mkdirp.sync(join(config.path, 'ephemeral-keys'))
-    const db = level(join(config.path, 'ephemeral-keys'))
+    mkdirp.sync(join(config.path, dbPath))
 
     function generateAndStore (dbKey, callback) {
       const ephKeypairBuffer = keyPair()
@@ -27,10 +29,7 @@ module.exports = {
 
       for (var k in ephKeypairBuffer) ephKeypair[k] = packKey(ephKeypairBuffer[k])
 
-      // TODO: level allows objects as keys but i cant get it to work, hence this
-      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
-
-      db.put(dbKey, ephKeypair, {valueEncoding: 'json'}, (err) => {
+      fs.writeFile(buildFileName(dbKey), JSON.stringify(ephKeypair, null, 2), (err) => {
         if (err) return callback(err)
         callback(null, ephKeypair.publicKey)
       })
@@ -60,12 +59,10 @@ module.exports = {
         return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
       }
 
-      // TODO: level allows objects as keys but i cant get it to work, hence this
-      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
-
-      db.get(dbKey, {valueEncoding: 'json'}, (err, ephKeypairBase64) => {
+      fs.readFile(buildFileName(dbKey), (err, data) => {
         if (err) return callback(err)
-
+        console.log(JSON.parse(data))
+        const ephKeypairBase64 = JSON.parse(data)
         var ephKeypair = {}
         try {
           for (var k in ephKeypairBase64) ephKeypair[k] = unpackKey(ephKeypairBase64[k])
@@ -84,13 +81,18 @@ module.exports = {
     }
 
     function deleteKeyPair (dbKey, callback) {
-      // TODO: level allows objects as keys but i cant get it to work, hence this
-      if (isObject(dbKey)) { dbKey = JSON.stringify(dbKey) }
+      skrub([ buildFileName(dbKey) ], {dryRun: false}).then(
+        paths => { callback() },
+        err => callback(err)
+      )
+    }
 
-      db.del(dbKey, (err) => {
-        if (err) return callback(err)
-        callback()
-      })
+    function buildFileName (fileName) {
+      if (isMsg(fileName)) {
+        fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
+      }
+      fileName += '.json'
+      return join(config.path, dbPath, fileName)
     }
 
     return {
