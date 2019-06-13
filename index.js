@@ -92,7 +92,7 @@ module.exports = {
       }
       if (isObject(fileName)) {
         // Stringify, then take hash and encode as hex
-        fileName = genericHash(JSON.stringify(fileName)).toString('hex')
+        fileName = genericHash(Buffer.from(JSON.stringify(fileName))).toString('hex')
       }
       fileName += '.json'
       return join(config.path, dbPath, fileName)
