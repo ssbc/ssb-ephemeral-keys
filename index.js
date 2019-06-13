@@ -7,7 +7,7 @@ const { isMsg } = require('ssb-ref')
 const { assert, isString, isObject } = require('./util')
 const curve = 'curve25519'
 const cipherTextSuffix = '.box'
-const { keyPair, decryptMessage, encryptMessage } = require('./crypto')
+const { keyPair, decryptMessage, encryptMessage, genericHash } = require('./crypto')
 
 const dbPath = 'ephemeral-keys'
 
@@ -91,7 +91,8 @@ module.exports = {
         fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
       }
       if (isObject(fileName)) {
-        fileName = JSON.stringify(fileName)
+        // Stringify, then take hash and encode as hex
+        fileName = genericHash(JSON.stringify(fileName)).toString('hex')
       }
       fileName += '.json'
       return join(config.path, dbPath, fileName)
