@@ -90,6 +90,9 @@ module.exports = {
       if (isMsg(fileName)) {
         fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
       }
+      if (isObject(fileName)) {
+        fileName = JSON.stringify(fileName)
+      }
       fileName += '.json'
       return join(config.path, dbPath, fileName)
     }
