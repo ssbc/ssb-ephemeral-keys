@@ -92,7 +92,6 @@ module.exports = {
       }
       // to obfuscate the chosen dbKey on disk, the filename is it's hash
       const fileName = genericHash(Buffer.from(dbKey)).toString('hex')
-      console.log(fileName)
       return join(config.path, dbPath, fileName + '.json')
     }
 
