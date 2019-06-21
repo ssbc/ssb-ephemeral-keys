@@ -86,16 +86,14 @@ module.exports = {
       )
     }
 
-    function buildFileName (fileName) {
-      if (isMsg(fileName)) {
-        fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
+    function buildFileName (dbKey) {
+      if (isObject(dbKey)) {
+        dbKey = JSON.stringify(dbKey)
       }
-      if (isObject(fileName)) {
-        // Stringify, then take hash and encode as hex
-        fileName = genericHash(Buffer.from(JSON.stringify(fileName))).toString('hex')
-      }
-      fileName += '.json'
-      return join(config.path, dbPath, fileName)
+      // to obfuscate the chosen dbKey on disk, the filename is it's hash
+      const fileName = genericHash(Buffer.from(dbKey)).toString('hex')
+      console.log(fileName)
+      return join(config.path, dbPath, fileName + '.json')
     }
 
     return {
