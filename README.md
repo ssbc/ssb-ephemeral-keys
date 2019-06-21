@@ -118,6 +118,8 @@ This function will generate a keypair, store the secret key
 to disk, indexed by the given database key and return
 the public key to be included in a request in the callback.
 
+databaseKey may be a string or an object
+
 ### `boxMessage(message, recipientPublicKey, contextMessage, cb)` (async)
 
 This function will generate a keypair, encrypt a given shard to
@@ -136,7 +138,11 @@ result in the callback.
 The context message is a string which is added to the shared
 secret so that it may only be used for a specific purpose.
 
-### `deleteKeyPair(dbKey, callback)` (async)
+databaseKey may be a string or an object
+
+### `deleteKeyPair(databaseKey, callback)` (async)
 
 This function will delete a keyPair identified by the given database key
+
+databaseKey may be a string or an object
 

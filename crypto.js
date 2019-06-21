@@ -68,5 +68,5 @@ function decryptMessage (cipherText, ephKeypair, contextMessage) {
 }
 
 module.exports = {
-  keyPair, decryptMessage, encryptMessage
+  keyPair, decryptMessage, encryptMessage, genericHash
 }
