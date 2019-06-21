@@ -25,9 +25,9 @@ module.exports = {
     function generateAndStore (dbKey, callback) {
       const ephKeypairBuffer = keyPair()
       var ephKeypair = {}
-
+      // TODO: check that there does not already exist a keypair with this key
       for (var k in ephKeypairBuffer) ephKeypair[k] = packKey(ephKeypairBuffer[k])
-
+      assert(dbKey, 'A database key must be given')
       fs.writeFile(buildFileName(dbKey), JSON.stringify(ephKeypair, null, 2), (err) => {
         if (err) return callback(err)
         callback(null, ephKeypair.publicKey)
@@ -58,6 +58,7 @@ module.exports = {
         return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
       }
 
+      assert(dbKey, 'A database key must be given')
       fs.readFile(buildFileName(dbKey), (err, data) => {
         if (err) return callback(err)
         const ephKeypairBase64 = JSON.parse(data)
@@ -79,6 +80,7 @@ module.exports = {
     }
 
     function deleteKeyPair (dbKey, callback) {
+      assert(dbKey, 'A database key must be given')
       skrub([ buildFileName(dbKey) ], {dryRun: false}).then(
         paths => { callback() },
         err => callback(err)
