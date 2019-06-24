@@ -43,6 +43,42 @@ sbot.ephemeral.generateAndStore(dbKey, (err, pk) => {
 
 Note that both alice and bob must use the same context message.
 
+## API
+
+### `generateAndStore(databaseKey, callback)` (async)
+
+This function will generate a keypair, store the secret key
+to disk, indexed by the given database key and return
+the public key to be included in a request in the callback.
+
+databaseKey may be a string or an object
+
+### `boxMessage(message, recipientPublicKey, contextMessage, cb)` (async)
+
+This function will generate a keypair, encrypt a given shard to
+a given ephemeral public key, delete the generated private key, 
+and return the encrypted message encoded as a base64 string in the callback.
+ 
+The context message is a string which is added to the shared
+secret so that it may only be used for a specific purpose.
+
+### `unBoxMessage(databaseKey, encryptedMessage, contextMessage, callback)` (async)
+
+This function will grab a stored secret key from disk using the
+given database key, use it to decrypt a given message and return the
+result in the callback.
+
+The context message is a string which is added to the shared
+secret so that it may only be used for a specific purpose.
+
+databaseKey may be a string or an object
+
+### `deleteKeyPair(databaseKey, callback)` (async)
+
+This function will delete a keyPair identified by the given database key
+
+databaseKey may be a string or an object
+
 ## Security Review
 
 First an ephemeral key is generated, and stored on the local system for later, under an arbitrary
@@ -109,40 +145,4 @@ It only solves half the problem, and leaves quite a bit of the responsibility of
 implementing a secure system to the application which uses it. That is to say,
 it's would be easy for the application to screw things up. For example,
 by not deleting the key, or reusing the key too many times.
-
-## API
-
-### `generateAndStore(databaseKey, callback)` (async)
-
-This function will generate a keypair, store the secret key
-to disk, indexed by the given database key and return
-the public key to be included in a request in the callback.
-
-databaseKey may be a string or an object
-
-### `boxMessage(message, recipientPublicKey, contextMessage, cb)` (async)
-
-This function will generate a keypair, encrypt a given shard to
-a given ephemeral public key, delete the generated private key, 
-and return the encrypted message encoded as a base64 string in the callback.
- 
-The context message is a string which is added to the shared
-secret so that it may only be used for a specific purpose.
-
-### `unBoxMessage(databaseKey, encryptedMessage, contextMessage, callback)` (async)
-
-This function will grab a stored secret key from disk using the
-given database key, use it to decrypt a given message and return the
-result in the callback.
-
-The context message is a string which is added to the shared
-secret so that it may only be used for a specific purpose.
-
-databaseKey may be a string or an object
-
-### `deleteKeyPair(databaseKey, callback)` (async)
-
-This function will delete a keyPair identified by the given database key
-
-databaseKey may be a string or an object
 

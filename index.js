@@ -2,7 +2,6 @@ const mkdirp = require('mkdirp')
 const { join } = require('path')
 const fs = require('fs')
 const skrub = require('skrub')
-const { isMsg } = require('ssb-ref')
 
 const { assert, isString, isObject } = require('./util')
 const curve = 'curve25519'
@@ -26,9 +25,9 @@ module.exports = {
     function generateAndStore (dbKey, callback) {
       const ephKeypairBuffer = keyPair()
       var ephKeypair = {}
-
+      // TODO: check that there does not already exist a keypair with this key
       for (var k in ephKeypairBuffer) ephKeypair[k] = packKey(ephKeypairBuffer[k])
-
+      assert(dbKey, 'A database key must be given')
       fs.writeFile(buildFileName(dbKey), JSON.stringify(ephKeypair, null, 2), (err) => {
         if (err) return callback(err)
         callback(null, ephKeypair.publicKey)
@@ -59,6 +58,7 @@ module.exports = {
         return callback(new Error('Ciphertext must end in ' + cipherTextSuffix))
       }
 
+      assert(dbKey, 'A database key must be given')
       fs.readFile(buildFileName(dbKey), (err, data) => {
         if (err) return callback(err)
         const ephKeypairBase64 = JSON.parse(data)
@@ -80,22 +80,20 @@ module.exports = {
     }
 
     function deleteKeyPair (dbKey, callback) {
+      assert(dbKey, 'A database key must be given')
       skrub([ buildFileName(dbKey) ], {dryRun: false}).then(
         paths => { callback() },
         err => callback(err)
       )
     }
 
-    function buildFileName (fileName) {
-      if (isMsg(fileName)) {
-        fileName = Buffer.from(fileName.split('.')[0], 'base64').toString('hex')
+    function buildFileName (dbKey) {
+      if (isObject(dbKey)) {
+        dbKey = JSON.stringify(dbKey)
       }
-      if (isObject(fileName)) {
-        // Stringify, then take hash and encode as hex
-        fileName = genericHash(Buffer.from(JSON.stringify(fileName))).toString('hex')
-      }
-      fileName += '.json'
-      return join(config.path, dbPath, fileName)
+      // to obfuscate the chosen dbKey on disk, the filename is it's hash
+      const fileName = genericHash(Buffer.from(dbKey)).toString('hex')
+      return join(config.path, dbPath, fileName + '.json')
     }
 
     return {
